@@ -1,0 +1,90 @@
+# Multiplayer Tic-Tac-Toe with Nakama — Development Guidelines
+
+Auto-generated from plan. Last updated: 2026-04-09
+
+## Active Technologies
+
+- **Backend**: Go 1.26.1 — Nakama OSS runtime plugin (nakama-common v1.45.0)
+- **Frontend**: React 18 + TypeScript 5.x — Vite 6 build
+- **Styling**: Tailwind CSS 4 + shadcn/ui
+- **SDK**: @heroiclabs/nakama-js
+- **Database**: PostgreSQL (Nakama-managed)
+- **Auth**: Dual — Guest (device ID) + Registered (email/password, Google OAuth)
+- **Testing**: go test (backend), Vitest + React Testing Library (frontend)
+- **Deployment**: Docker Compose (DigitalOcean) + Vercel (frontend)
+
+## Project Structure
+
+```text
+backend/
+├── main.go              # InitModule — register handlers, create leaderboard
+├── match_handler.go     # Match lifecycle handlers
+├── rpc.go               # RPC endpoints (create_room, join_room, etc.)
+├── game_logic.go        # Pure functions: checkWin, checkDraw, applyMove
+├── leaderboard.go       # Leaderboard write/read helpers
+├── auth.go              # isRegisteredUser, auth-gating checks
+├── types.go             # MatchState, GameStatus, OpCode constants
+└── game_logic_test.go   # Unit tests for game logic
+
+frontend/
+├── src/
+│   ├── lib/nakama.ts
+│   ├── pages/ (AuthPage, LobbyPage, GamePage)
+│   ├── components/ (Board, PlayerInfo, ResultOverlay, Leaderboard)
+│   └── hooks/ (useNakama, useMatch, useMatchmaker)
+├── vite.config.ts
+└── tailwind.config.ts
+
+docker-compose.yml
+nakama-config.yml
+Makefile
+```
+
+## Commands
+
+```bash
+# Backend
+cd backend && go test ./... -v          # Run Go tests
+go build -buildmode=plugin -trimpath -o ./backend.so  # Build plugin
+
+# Frontend
+cd frontend && npm install              # Install deps
+cd frontend && npm run dev              # Dev server (port 5173)
+cd frontend && npx vitest run           # Run tests
+
+# Full stack
+make dev                                # Docker Compose up (Nakama + PostgreSQL)
+make build                              # Build plugin + frontend
+make test                               # All tests
+```
+
+## Code Style
+
+### Go (Backend)
+- Pure game logic functions MUST NOT depend on Nakama runtime types
+- All RPC handlers MUST check `isRegisteredUser` before gated operations
+- Match handlers follow Nakama interface: MatchInit, MatchJoinAttempt, MatchJoin, MatchLoop, MatchLeave, MatchTerminate
+- Structured logging via `logger.Info/Warn/Error` with fields
+
+### TypeScript (Frontend)
+- nakama-js SDK is the sole transport layer — no direct fetch/WebSocket calls
+- Client MUST NOT derive game state locally — render server-broadcast data only
+- Component structure: pages/ for routes, components/ for reusable UI, hooks/ for state logic
+
+## Constitution Reference
+
+See `.specify/memory/constitution.md` (v2.1.0) for binding principles:
+- **I. Server Authority** (NON-NEGOTIABLE): All game logic server-side
+- **II. WebSocket-First**: Game events via WS, REST for RPCs only
+- **III. Match Isolation**: Goroutine-per-match, no shared state
+- **IV. Test-Driven**: TDD for checkWin/checkDraw/applyMove
+- **V. Containerized**: Docker Compose parity local ↔ production
+- **VI. Mobile-First**: 375px+ responsive, Tailwind + shadcn/ui
+- **VII. Disconnect = Forfeit**: Immediate, no reconnection grace period
+
+## Recent Changes
+
+- **2026-04-09**: Initial plan — full-stack multiplayer TTT with dual auth model (guest + registered)
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->

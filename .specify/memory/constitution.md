@@ -1,20 +1,15 @@
 <!--
 == Sync Impact Report ==
-Version change: 1.0.0 → 2.0.0 (MAJOR)
-Bump rationale: Principle VII backward-incompatibly redefined —
-  reconnection/grace-period model replaced with immediate forfeit
-  per spec FR-GAME-5 and NFR-REL-1.
-Modified principles:
-  - VI. Mobile-First Responsive UI: minimum viewport 320px → 375px;
-    added Tailwind CSS + shadcn/ui styling constraint
-  - VII. Graceful Connection Handling → Disconnect & Timeout Handling:
-    removed reconnection grace period; disconnect now triggers
-    immediate forfeit and match termination
-Added sections:
-  - Performance Targets (under Technical Stack Constraints)
-  - Security Constraints (new section)
-  - Observability (under Development & Quality Gates)
-Removed sections: None
+Version change: 2.0.0 → 2.1.0 (MINOR)
+Bump rationale: Auth model materially expanded — device-ID-only
+  replaced with dual auth (guest via device ID + registered via
+  email/password or Google OAuth). Feature gating added:
+  leaderboard and private rooms require registered account.
+Modified sections:
+  - Technical Stack Constraints: Auth row updated to dual model
+  - Security Constraints: added auth-gating rules
+Previous report (2.0.0): Principle VII redefined, performance/
+  security/observability sections added.
 Templates requiring updates:
   - .specify/templates/plan-template.md ✅ aligned
   - .specify/templates/spec-template.md ✅ aligned
@@ -182,7 +177,7 @@ data in PostgreSQL.
 | Backend  | Nakama OSS              | Go runtime plugin, `InitModule`    |
 | Language | Go                      | Match handlers + RPC + game logic  |
 | Database | PostgreSQL              | Nakama-managed, no raw SQL         |
-| Auth     | Nakama device auth      | JWT session, device ID, no sign-up |
+| Auth     | Nakama dual auth        | Guest (device ID) + registered (email/password, Google OAuth) |
 | Hosting FE | Vercel               | CDN, public URL                    |
 | Hosting BE | DigitalOcean Droplet  | Docker Compose, 2 vCPU / 2 GB     |
 | CI/CD    | GitHub Actions          | Lint, test, deploy                 |
@@ -193,8 +188,19 @@ data in PostgreSQL.
 - The Go plugin MUST compile as a shared object loaded by the
   Nakama binary; Lua/TypeScript runtimes MUST NOT be used for
   game logic.
-- Authentication MUST use device ID (anonymous) for zero
-  friction. No email/password sign-up is required.
+- Authentication MUST support two tiers:
+  - **Guest**: Device ID auth for zero-friction entry. Guests
+    can auto-matchmake and play games but MUST NOT access
+    private rooms or leaderboard features.
+  - **Registered**: Email/password or Google OAuth via Nakama's
+    built-in auth. Registered users unlock private room
+    creation/joining, leaderboard tracking, and persistent
+    stats across sessions.
+- Guest accounts MUST be upgradeable to registered accounts
+  via the signup flow without losing the current session.
+- Google OAuth MUST be configured via Nakama's social login
+  integration; OAuth client credentials MUST NOT be exposed
+  in client-side code.
 
 ### Performance Targets
 
@@ -215,6 +221,11 @@ data in PostgreSQL.
 - Room codes MUST be derived from the first 8 characters of the
   match ID (UUID), providing sufficient unguessability for a
   demo (NFR-SEC-3).
+- Private room RPCs (`create_room`, `join_room`) MUST verify
+  the caller is a registered user; guest sessions MUST be
+  rejected with an authorization error.
+- Leaderboard RPCs (`get_leaderboard`, `get_player_stats`) and
+  leaderboard writes MUST require a registered account.
 - The Nakama admin console (port 7351) MUST NOT be exposed
   publicly. Access MUST require an SSH tunnel (NFR-SEC-4).
 - PostgreSQL (port 5432) MUST NOT be exposed externally.
@@ -290,4 +301,4 @@ principles.
 specification (`/speckit.plan`), the Constitution Check section
 MUST be evaluated against these principles.
 
-**Version**: 2.0.0 | **Ratified**: 2026-04-09 | **Last Amended**: 2026-04-09
+**Version**: 2.1.0 | **Ratified**: 2026-04-09 | **Last Amended**: 2026-04-09

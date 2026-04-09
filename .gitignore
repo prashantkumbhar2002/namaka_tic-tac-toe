@@ -1,4 +1,5 @@
 # Spec-kit
 .specify/
 .cursor/commands/speckit.*
-namaka_tic-tac-toe/
+namaka_tic-tac-toe/.cursor/
+namaka_tic-tac-toe/.specify/

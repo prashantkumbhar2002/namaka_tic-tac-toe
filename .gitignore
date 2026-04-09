@@ -1,0 +1,34 @@
+# Go
+backend/*.so
+backend/*.out
+vendor/
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+*.log
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Docker
+pgdata/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Specify (keep templates, ignore generated)
+.specify/memory/
+
+# Cursor
+.cursor/

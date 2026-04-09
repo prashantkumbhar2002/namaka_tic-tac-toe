@@ -1,0 +1,23 @@
+name: tictactoe
+data_dir: /nakama/data
+
+logger:
+  level: INFO
+  stdout: true
+  format: json
+
+runtime:
+  path: /nakama/data/modules
+
+socket:
+  server_key: "defaultkey"
+  port: 7350
+
+console:
+  port: 7351
+  username: admin
+  password: password
+
+match:
+  input_queue_size: 128
+  deferred_queue_size: 128
